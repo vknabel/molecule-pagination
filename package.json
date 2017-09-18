@@ -1,0 +1,95 @@
+{
+  "name": "@molecule/pagination",
+  "description": "A structural directive for pagination in Ionic and Angular.",
+  "version": "0.0.1",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "homepage": "https://github.com/vknabel/molecule-pagination#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vknabel/molecule-pagination.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vknabel/molecule-pagination/issues"
+  },
+  "keywords": [
+    "ionic",
+    "angular",
+    "lifecycle",
+    "typescript",
+    "decorator",
+    "declarative",
+    "app",
+    "reactive",
+    "rx"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && ngc",
+    "danger": "tsc -p tsconfig.danger.json && danger",
+    "danger:pr": "tsc -p tsconfig.danger.json && danger pr",
+    "test": "karma start",
+    "test:single": "karma start --single-run",
+    "lint": "prettier --single-quote --parser typescript --write \"{./src/**/*.ts,dangerfile.ts}\" && tslint src/**/*.ts --force",
+    "prepublish": "in-publish && yarn lint --force && yarn build && yarn test:single || true"
+  },
+  "files": [
+    "dist"
+  ],
+  "jest": {
+    "transform": {
+      ".(ts|tsx)": "<rootDir>/node_modules/ts-jest/preprocessor.js"
+    }
+  },
+  "devDependencies": {
+    "@angular/cli": "1.0.2",
+    "@angular/common": "^4.0.0",
+    "@angular/compiler": "^4.0.0",
+    "@angular/compiler-cli": "^4.0.0",
+    "@angular/core": "^4.0.0",
+    "@angular/forms": "^4.0.0",
+    "@angular/http": "^4.0.0",
+    "@angular/platform-browser": "^4.0.0",
+    "@angular/platform-browser-dynamic": "^4.0.0",
+    "@angular/router": "^4.0.0",
+    "@ionic-native/core": "^3.0.0",
+    "@ionic-native/status-bar": "^3.0.0",
+    "@types/jasmine": "2.5.38",
+    "@types/node": "~6.0.60",
+    "codelyzer": "~2.0.0",
+    "core-js": "^2.4.1",
+    "danger": "^0.18.0",
+    "in-publish": "^2.0.0",
+    "jasmine-core": "~2.5.2",
+    "jasmine-marbles": "^0.1.0",
+    "jasmine-spec-reporter": "~3.2.0",
+    "karma": "~1.4.1",
+    "karma-chrome-launcher": "~2.0.0",
+    "karma-cli": "~1.0.1",
+    "karma-coverage-istanbul-reporter": "^0.2.0",
+    "karma-jasmine": "~1.1.0",
+    "karma-jasmine-html-reporter": "^0.2.2",
+    "karma-phantomjs-launcher": "^1.0.4",
+    "karma-typescript": "^3.0.1",
+    "karma-typescript-angular2-transform": "^1.0.0",
+    "karma-typescript-es6-transform": "^1.0.0",
+    "prettier": "^1.5.3",
+    "protractor": "~5.1.0",
+    "rxjs": "^5.1.0",
+    "ts-jest": "^20.0.3",
+    "ts-node": "~2.0.0",
+    "tslint": "~4.5.0",
+    "typescript": "^2.2.0",
+    "zone.js": "^0.8.4"
+  },
+  "peerDependencies": {
+    "@angular/common": "^4.0.0",
+    "@angular/compiler": "^4.0.0",
+    "@angular/core": "^4.0.0",
+    "@angular/platform-browser": "^4.0.0",
+    "@angular/platform-browser-dynamic": "^4.0.0",
+    "core-js": "^2.4.1",
+    "rxjs": "^5.1.0",
+    "zone.js": "^0.8.4"
+  }
+}

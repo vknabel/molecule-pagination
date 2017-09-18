@@ -1,0 +1,8 @@
+coverage:
+  ignore:
+    - "src/testing/*"
+    - "src/**/*.spec.ts"
+    - "src/**/*.mock.ts"
+comment:
+  layout: "header, diff"
+  require_changes: true

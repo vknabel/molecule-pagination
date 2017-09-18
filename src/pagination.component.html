@@ -1,0 +1,10 @@
+<ng-template let-items [ngIf]="items$|async" [ngIfElse]="pageLoading">
+  <ng-content *ngIf="items.length == 0; else pageContent" select="molPaginationEmpty"></ng-content>
+  <ng-template #pageContent>
+    <ng-content></ng-content>
+  </ng-template>
+</ng-template>
+
+<ng-template #pageLoading>
+  <ng-content select="molPaginationLoading"></ng-content>
+</ng-template>
