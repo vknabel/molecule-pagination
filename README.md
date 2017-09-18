@@ -2,7 +2,7 @@
 
 [![CircleCI](https://img.shields.io/circleci/project/github/vknabel/molecule-pagination.svg?style=flat-square)](https://circleci.com/gh/vknabel/molecule-pagination)
 [![Codecov](https://img.shields.io/codecov/c/github/vknabel/molecule-pagination.svg?style=flat-square)](https://codecov.io/gh/vknabel/molecule-pagination)
-[![npm (scoped)](https://img.shields.io/npm/v/@ionic-decorator/molecule-pagination.svg?style=flat-square)](https://www.npmjs.com/package/@molecule/pagination)
+[![npm (scoped)](https://img.shields.io/npm/v/@molecule/pagination.svg?style=flat-square)](https://www.npmjs.com/package/@molecule/pagination)
 
 The structural `molPagination`-Directive for Angular implements pagination of your data, but keeps you and your layout flexible.
 You only need to focus on retrieving all items for your page, an observable indicating when to load the next page and one observable for when to hard-reload all data. Everything else is just your markup!
