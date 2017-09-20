@@ -116,6 +116,7 @@ describe('pagination component', () => {
     async(() => {
       host.itemsForPage = (page, forceReload) => Observable.never();
       hostFixture.detectChanges();
+
       hostFixture.whenStable().then(() => {
         expect(
           hostFixture.debugElement.queryAll(By.css('[testLoading]')).length

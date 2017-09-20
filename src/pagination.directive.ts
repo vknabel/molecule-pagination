@@ -5,6 +5,7 @@ import {
   Input,
   OnChanges,
   OnDestroy,
+  OnInit,
   SimpleChanges,
   TemplateRef,
   ViewContainerRef
@@ -15,6 +16,7 @@ import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
 import 'rxjs/add/observable/never';
 import 'rxjs/add/observable/of';
+import 'rxjs/add/observable/merge';
 import 'rxjs/add/operator/pluck';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/switchMap';
@@ -27,6 +29,7 @@ import 'rxjs/add/operator/mapTo';
 import 'rxjs/add/operator/startWith';
 import 'rxjs/add/operator/defaultIfEmpty';
 import 'rxjs/add/operator/filter';
+import 'rxjs/add/operator/mergeScan';
 
 export type PageLoader<T> = (
   page: number,
@@ -36,7 +39,7 @@ export type PageLoader<T> = (
 @Directive({
   selector: '[molPagination]'
 })
-export class PaginationDirective<T> implements OnChanges, OnDestroy {
+export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
   @Input()
   public set molPagination(loader: PageLoader<T>) {}
   @Input() public molPaginationIfLoading?: TemplateRef<PaginationContext<T>>;
@@ -66,21 +69,20 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy {
     private readonly changeDetector: ChangeDetectorRef
   ) {
     this.context = new PaginationContext<T>(this.page$, this.items$);
-    this.ngOnChanges$
+  }
+
+  public ngOnInit(): void {
+    const loadNext$ = this.ngOnChanges$
       .pluck('molPaginationLoadNext', 'currentValue')
       .switchMap(
-        (loadNext$: Observable<void>): Observable<void> =>
-          loadNext$ || Observable.never<void>()
-      )
-      .takeUntil(this.ngOnDestroy$)
-      .subscribe(() => this.page$.next(this.page$.getValue() + 1));
-
+        (source: Observable<void>): Observable<void> =>
+          source || Observable.never<void>()
+      );
     const hardReload$ = this.ngOnChanges$
-      .pluck('molPaginationHardReload', 'currentValue')
+      .pluck<SimpleChanges, Observable<void>>('molPaginationHardReload', 'currentValue')
       .filter((v: Observable<void>) => v != null)
       .startWith<Observable<void>>(Observable.never<void>())
-      .switch()
-      .do(() => this.page$.next(0));
+      .switch();
     const latestRequest$ = this.ngOnChanges$
       .pluck('molPagination', 'currentValue')
       .map(
@@ -88,73 +90,83 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy {
           loader || ((() => Observable.never()) as PageLoader<T>)
       );
 
-    latestRequest$
-      .switchMap((itemsForPage: PageLoader<T>) =>
-        this.page$
-          .mergeMap(page =>
-            hardReload$
-              .mapTo(true)
-              .startWith(false)
-              .mergeMap(wasForced =>
-                itemsForPage(page, wasForced).defaultIfEmpty([])
-              )
-              .map(items => ({ page, items }))
-          )
-          .scan((book: T[][], nextPage) => {
-            book[nextPage.page] = nextPage.items;
-            return book;
-          }, [])
-          .map(book =>
-            book.reduce(
-              (flattened, pageItems) => flattened.concat(pageItems),
-              []
-            )
-          )
-          .startWith(null)
+    const shouldLoadNext$ = Observable.merge(
+      hardReload$.mapTo(false),
+      loadNext$.mapTo(true)
+    );
+
+    latestRequest$.switchMap((itemsForPage: PageLoader<T>) => shouldLoadNext$.startWith(false)
+      .mergeScan((state, shouldLoadNext) => {
+        if (shouldLoadNext) {
+          const nextPage = state.currentPage + 1;
+          return itemsForPage(nextPage, false)
+            .defaultIfEmpty([])
+            .map((newItems: T[]) => {
+              const copy = state.book.slice(0);
+              copy[nextPage] = newItems;
+              return { currentPage: newItems.length === 0 ? state.currentPage : nextPage, book: copy };
+            });
+        } else {
+          return itemsForPage(0, true)
+            .defaultIfEmpty([])
+            .map((initialItems: T[]) => {
+              return { currentPage: 0, book: [initialItems] };
+            });
+        }
+      }, { currentPage: 0, book: [] as T[][] }, 1)
+    ).do(record => this.page$.next(record.currentPage))
+      .map(record => record.book)
+      .map(book =>
+        book.reduce(
+          (flattened, pageItems) => flattened.concat(pageItems),
+          []
+        )
       )
+      .startWith(null)
       .do(nextValue => this.items$.next(nextValue))
       .do(() => this.changeDetector.markForCheck())
       .do(items => {
         if (items == null) {
-          if (!this.loadingViewRef) {
-            this.viewContainerRef.clear();
-            this.emptyViewRef = null;
-            this.fetchedViewRef = null;
-            if (this.molPaginationIfLoading) {
-              this.loadingViewRef = this.viewContainerRef.createEmbeddedView(
-                this.molPaginationIfLoading,
-                this.context
-              );
-            }
-          }
-        } else if (items.length === 0) {
-          if (!this.emptyViewRef) {
-            this.viewContainerRef.clear();
-            this.loadingViewRef = null;
-            this.fetchedViewRef = null;
-            if (this.molPaginationIfEmpty) {
-              this.emptyViewRef = this.viewContainerRef.createEmbeddedView(
-                this.molPaginationIfEmpty,
-                this.context
-              );
-            }
-          }
-        } else {
-          if (!this.fetchedViewRef) {
-            this.viewContainerRef.clear();
-            this.loadingViewRef = null;
-            this.emptyViewRef = null;
-            if (this.templateRef) {
-              this.fetchedViewRef = this.viewContainerRef.createEmbeddedView(
-                this.templateRef,
-                this.context
-              );
-            }
+        if (!this.loadingViewRef) {
+          this.viewContainerRef.clear();
+          this.emptyViewRef = null;
+          this.fetchedViewRef = null;
+          if (this.molPaginationIfLoading) {
+            this.loadingViewRef = this.viewContainerRef.createEmbeddedView(
+              this.molPaginationIfLoading,
+              this.context
+            );
           }
         }
-      })
-      .takeUntil(this.ngOnDestroy$)
-      .subscribe();
+      } else if (items.length === 0) {
+        if (!this.emptyViewRef) {
+          this.viewContainerRef.clear();
+          this.loadingViewRef = null;
+          this.fetchedViewRef = null;
+          if (this.molPaginationIfEmpty) {
+            this.emptyViewRef = this.viewContainerRef.createEmbeddedView(
+              this.molPaginationIfEmpty,
+              this.context
+            );
+          }
+        }
+      } else {
+        if (!this.fetchedViewRef) {
+          this.viewContainerRef.clear();
+          this.loadingViewRef = null;
+          this.emptyViewRef = null;
+          if (this.templateRef) {
+            this.fetchedViewRef = this.viewContainerRef.createEmbeddedView(
+              this.templateRef,
+              this.context
+            );
+          }
+        }
+      }
+    })
+    .do(() => this.changeDetector.markForCheck())
+    .takeUntil(this.ngOnDestroy$)
+    .subscribe();
   }
 
   public ngOnChanges(changes: SimpleChanges) {
