@@ -79,7 +79,10 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
           source || Observable.never<void>()
       );
     const hardReload$ = this.ngOnChanges$
-      .pluck<SimpleChanges, Observable<void>>('molPaginationHardReload', 'currentValue')
+      .pluck<SimpleChanges, Observable<void>>(
+        'molPaginationHardReload',
+        'currentValue'
+      )
       .filter((v: Observable<void>) => v != null)
       .startWith<Observable<void>>(Observable.never<void>())
       .switch();
@@ -95,78 +98,85 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
       loadNext$.mapTo(true)
     );
 
-    latestRequest$.switchMap((itemsForPage: PageLoader<T>) => shouldLoadNext$.startWith(false)
-      .mergeScan((state, shouldLoadNext) => {
-        if (shouldLoadNext) {
-          const nextPage = state.currentPage + 1;
-          return itemsForPage(nextPage, false)
-            .defaultIfEmpty([])
-            .map((newItems: T[]) => {
-              const copy = state.book.slice(0);
-              copy[nextPage] = newItems;
-              return { currentPage: newItems.length === 0 ? state.currentPage : nextPage, book: copy };
-            });
-        } else {
-          return itemsForPage(0, true)
-            .defaultIfEmpty([])
-            .map((initialItems: T[]) => {
-              return { currentPage: 0, book: [initialItems] };
-            });
-        }
-      }, { currentPage: 0, book: [] as T[][] }, 1)
-    ).do(record => this.page$.next(record.currentPage))
+    latestRequest$
+      .switchMap((itemsForPage: PageLoader<T>) =>
+        shouldLoadNext$.startWith(false).mergeScan(
+          (state, shouldLoadNext) => {
+            if (shouldLoadNext) {
+              const nextPage = state.currentPage + 1;
+              return itemsForPage(nextPage, false)
+                .defaultIfEmpty([])
+                .map((newItems: T[]) => {
+                  const copy = state.book.slice(0);
+                  copy[nextPage] = newItems;
+                  return {
+                    currentPage:
+                      newItems.length === 0 ? state.currentPage : nextPage,
+                    book: copy
+                  };
+                });
+            } else {
+              return itemsForPage(0, true)
+                .defaultIfEmpty([])
+                .map((initialItems: T[]) => {
+                  return { currentPage: 0, book: [initialItems] };
+                });
+            }
+          },
+          { currentPage: 0, book: [] as T[][] },
+          1
+        )
+      )
+      .do(record => this.page$.next(record.currentPage))
       .map(record => record.book)
       .map(book =>
-        book.reduce(
-          (flattened, pageItems) => flattened.concat(pageItems),
-          []
-        )
+        book.reduce((flattened, pageItems) => flattened.concat(pageItems), [])
       )
       .startWith(null)
       .do(nextValue => this.items$.next(nextValue))
       .do(() => this.changeDetector.markForCheck())
       .do(items => {
         if (items == null) {
-        if (!this.loadingViewRef) {
-          this.viewContainerRef.clear();
-          this.emptyViewRef = null;
-          this.fetchedViewRef = null;
-          if (this.molPaginationIfLoading) {
-            this.loadingViewRef = this.viewContainerRef.createEmbeddedView(
-              this.molPaginationIfLoading,
-              this.context
-            );
+          if (!this.loadingViewRef) {
+            this.viewContainerRef.clear();
+            this.emptyViewRef = null;
+            this.fetchedViewRef = null;
+            if (this.molPaginationIfLoading) {
+              this.loadingViewRef = this.viewContainerRef.createEmbeddedView(
+                this.molPaginationIfLoading,
+                this.context
+              );
+            }
+          }
+        } else if (items.length === 0) {
+          if (!this.emptyViewRef) {
+            this.viewContainerRef.clear();
+            this.loadingViewRef = null;
+            this.fetchedViewRef = null;
+            if (this.molPaginationIfEmpty) {
+              this.emptyViewRef = this.viewContainerRef.createEmbeddedView(
+                this.molPaginationIfEmpty,
+                this.context
+              );
+            }
+          }
+        } else {
+          if (!this.fetchedViewRef) {
+            this.viewContainerRef.clear();
+            this.loadingViewRef = null;
+            this.emptyViewRef = null;
+            if (this.templateRef) {
+              this.fetchedViewRef = this.viewContainerRef.createEmbeddedView(
+                this.templateRef,
+                this.context
+              );
+            }
           }
         }
-      } else if (items.length === 0) {
-        if (!this.emptyViewRef) {
-          this.viewContainerRef.clear();
-          this.loadingViewRef = null;
-          this.fetchedViewRef = null;
-          if (this.molPaginationIfEmpty) {
-            this.emptyViewRef = this.viewContainerRef.createEmbeddedView(
-              this.molPaginationIfEmpty,
-              this.context
-            );
-          }
-        }
-      } else {
-        if (!this.fetchedViewRef) {
-          this.viewContainerRef.clear();
-          this.loadingViewRef = null;
-          this.emptyViewRef = null;
-          if (this.templateRef) {
-            this.fetchedViewRef = this.viewContainerRef.createEmbeddedView(
-              this.templateRef,
-              this.context
-            );
-          }
-        }
-      }
-    })
-    .do(() => this.changeDetector.markForCheck())
-    .takeUntil(this.ngOnDestroy$)
-    .subscribe();
+      })
+      .do(() => this.changeDetector.markForCheck())
+      .takeUntil(this.ngOnDestroy$)
+      .subscribe();
   }
 
   public ngOnChanges(changes: SimpleChanges) {
