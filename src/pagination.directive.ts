@@ -100,39 +100,43 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
 
     latestRequest$
       .switchMap((itemsForPage: PageLoader<T>) =>
-        shouldLoadNext$.startWith(false).mergeScan(
-          (state, shouldLoadNext) => {
-            if (shouldLoadNext) {
-              const nextPage = state.currentPage + 1;
-              return itemsForPage(nextPage, false)
-                .defaultIfEmpty([])
-                .map((newItems: T[]) => {
-                  const copy = state.book.slice(0);
-                  copy[nextPage] = newItems;
-                  return {
-                    currentPage:
-                      newItems.length === 0 ? state.currentPage : nextPage,
-                    book: copy
-                  };
-                });
-            } else {
-              return itemsForPage(0, true)
-                .defaultIfEmpty([])
-                .map((initialItems: T[]) => {
-                  return { currentPage: 0, book: [initialItems] };
-                });
-            }
-          },
-          { currentPage: 0, book: [] as T[][] },
-          1
-        )
+        shouldLoadNext$
+          .startWith(false)
+          .mergeScan(
+            (state, shouldLoadNext) => {
+              if (shouldLoadNext) {
+                const nextPage = state.currentPage + 1;
+                return itemsForPage(nextPage, false)
+                  .defaultIfEmpty([])
+                  .map((newItems: T[]) => {
+                    const copy = state.book.slice(0);
+                    copy[nextPage] = newItems;
+                    return {
+                      currentPage:
+                        newItems.length === 0 ? state.currentPage : nextPage,
+                      book: copy
+                    };
+                  });
+              } else {
+                return itemsForPage(0, true)
+                  .defaultIfEmpty([])
+                  .map((initialItems: T[]) => {
+                    return { currentPage: 0, book: [initialItems] };
+                  });
+              }
+            },
+            { currentPage: 0, book: [] as T[][] },
+            1
+          )
+          .startWith(null)
       )
-      .do(record => this.page$.next(record.currentPage))
-      .map(record => record.book)
-      .map(book =>
-        book.reduce((flattened, pageItems) => flattened.concat(pageItems), [])
+      .do(record => record && this.page$.next(record.currentPage))
+      .map(record => record && record.book)
+      .map(
+        book =>
+          book &&
+          book.reduce((flattened, pageItems) => flattened.concat(pageItems), [])
       )
-      .startWith(null)
       .do(nextValue => this.items$.next(nextValue))
       .do(() => this.changeDetector.markForCheck())
       .do(items => {

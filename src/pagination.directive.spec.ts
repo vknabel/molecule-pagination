@@ -137,4 +137,49 @@ describe('pagination component', () => {
       });
     })
   );
+
+  it(
+    'picks the latest page loader',
+    async(() => {
+      host.itemsForPage = (page, forceReload) => Observable.of([1, 2, 3]);
+      hostFixture.detectChanges();
+      host.itemsForPage = (page, forceReload) => Observable.of([3]);
+      hostFixture.detectChanges();
+      hostFixture.whenStable().then(() => {
+        expect(
+          hostFixture.debugElement.queryAll(By.css('[testContent]')).length
+        ).toEqual(1);
+      });
+    })
+  );
+
+  it(
+    'ignores previous page loader',
+    async(() => {
+      host.itemsForPage = (page, forceReload) => Observable.of([1, 2, 3]);
+      hostFixture.detectChanges();
+      host.itemsForPage = (page, forceReload) => Observable.never();
+      hostFixture.detectChanges();
+      hostFixture.whenStable().then(() => {
+        expect(
+          hostFixture.debugElement.queryAll(By.css('[testContent]')).length
+        ).toEqual(0);
+      });
+    })
+  );
+
+  it(
+    'changing the page loader starts loading',
+    async(() => {
+      host.itemsForPage = (page, forceReload) => Observable.of([1, 2, 3]);
+      hostFixture.detectChanges();
+      host.itemsForPage = (page, forceReload) => Observable.never();
+      hostFixture.detectChanges();
+      hostFixture.whenStable().then(() => {
+        expect(
+          hostFixture.debugElement.queryAll(By.css('[testLoading]')).length
+        ).toEqual(1);
+      });
+    })
+  );
 });
