@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Display spinner when loader changes
+
 ## 0.1.0
 
 - Fixes for edge cases
