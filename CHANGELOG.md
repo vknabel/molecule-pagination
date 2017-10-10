@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0
+
+- Introduced `PageSource` as a monad over `PageLoader` #1
+
 ## 0.1.1
 
 - Display spinner when loader changes

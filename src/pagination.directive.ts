@@ -30,11 +30,28 @@ import 'rxjs/add/operator/startWith';
 import 'rxjs/add/operator/defaultIfEmpty';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/mergeScan';
+import { PageLoader, PageSource } from './page-source.class';
 
-export type PageLoader<T> = (
-  page: number,
-  forceReload: boolean
-) => Observable<T[]>;
+export class PaginationContext<T> {
+  private page$: BehaviorSubject<number>;
+  private items$: BehaviorSubject<T[] | null>;
+
+  constructor(
+    page$: BehaviorSubject<number>,
+    items$: BehaviorSubject<T[] | null>
+  ) {
+    this.page$ = page$;
+    this.items$ = items$;
+  }
+
+  public get $implicit(): T[] | null {
+    return this.items$.getValue();
+  }
+
+  public get index(): number {
+    return this.page$.getValue();
+  }
+}
 
 @Directive({
   selector: '[molPagination]'
@@ -73,12 +90,14 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
 
   public ngOnInit(): void {
     const loadNext$ = this.ngOnChanges$
+      .asObservable()
       .pluck('molPaginationLoadNext', 'currentValue')
       .switchMap(
         (source: Observable<void>): Observable<void> =>
           source || Observable.never<void>()
       );
     const hardReload$ = this.ngOnChanges$
+      .asObservable()
       .pluck<SimpleChanges, Observable<void>>(
         'molPaginationHardReload',
         'currentValue'
@@ -87,11 +106,9 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
       .startWith<Observable<void>>(Observable.never<void>())
       .switch();
     const latestRequest$ = this.ngOnChanges$
+      .asObservable()
       .pluck('molPagination', 'currentValue')
-      .map(
-        (loader: PageLoader<T>) =>
-          loader || ((() => Observable.never()) as PageLoader<T>)
-      );
+      .map((loader: PageLoader<T>) => PageSource.from(loader));
 
     const shouldLoadNext$ = Observable.merge(
       hardReload$.mapTo(false),
@@ -99,14 +116,15 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
     );
 
     latestRequest$
-      .switchMap((itemsForPage: PageLoader<T>) =>
+      .switchMap((pageSource: PageSource<T>) =>
         shouldLoadNext$
           .startWith(false)
           .mergeScan(
             (state, shouldLoadNext) => {
               if (shouldLoadNext) {
                 const nextPage = state.currentPage + 1;
-                return itemsForPage(nextPage, false)
+                return pageSource
+                  .itemsForPage(nextPage, false)
                   .defaultIfEmpty([])
                   .map((newItems: T[]) => {
                     const copy = state.book.slice(0);
@@ -118,7 +136,8 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
                     };
                   });
               } else {
-                return itemsForPage(0, true)
+                return pageSource
+                  .itemsForPage(0, true)
                   .defaultIfEmpty([])
                   .map((initialItems: T[]) => {
                     return { currentPage: 0, book: [initialItems] };
@@ -179,7 +198,7 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
         }
       })
       .do(() => this.changeDetector.markForCheck())
-      .takeUntil(this.ngOnDestroy$)
+      .takeUntil(this.ngOnDestroy$.asObservable())
       .subscribe();
   }
 
@@ -190,26 +209,5 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
   public ngOnDestroy() {
     this.ngOnDestroy$.next(void 0);
     this.ngOnDestroy$.complete();
-  }
-}
-
-export class PaginationContext<T> {
-  private page$: BehaviorSubject<number>;
-  private items$: BehaviorSubject<T[] | null>;
-
-  constructor(
-    page$: BehaviorSubject<number>,
-    items$: BehaviorSubject<T[] | null>
-  ) {
-    this.page$ = page$;
-    this.items$ = items$;
-  }
-
-  public get $implicit(): T[] | null {
-    return this.items$.getValue();
-  }
-
-  public get index(): number {
-    return this.page$.getValue();
   }
 }

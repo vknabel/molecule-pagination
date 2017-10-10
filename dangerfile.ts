@@ -1,4 +1,6 @@
 import { danger, warn, TextDiff, results, schedule } from 'danger';
+import * as path from 'path';
+import tslint from 'danger-plugin-tslint';
 
 schedule(async () => {
   checkIfWorkIsInProgress();
@@ -13,6 +15,13 @@ schedule(async () => {
 export interface NamedDiff {
   name: string;
   diff: TextDiff | null;
+}
+
+function checkCodeStyle(): void {
+  // Handle TSLint results in `reports/lint-results.json` and leave a Danger comment on the PR
+  tslint({
+    lintResultsJsonPath: path.resolve(__dirname, 'reports', 'lint-results.json')
+  });
 }
 
 function checkIfWorkIsInProgress(): void {

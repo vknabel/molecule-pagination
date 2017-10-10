@@ -11,10 +11,11 @@ dependencies:
     - ~/.cache/yarn
 
 test:
-  pre:
-    - yarn danger
   override:
     - yarn test
     - yarn lint --force
   post:
+    - mkdir -p reports/
+    - yarn run lint --silent -- --format json | tee reports/lint-results.json
+    - yarn danger
     - bash <(curl -s https://codecov.io/bash) -f coverage/*/lcovonly
