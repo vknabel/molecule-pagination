@@ -1,4 +1,5 @@
-import { PageLoader, PaginationDirective } from './pagination.directive';
+import { PageLoader } from './page-source.class';
+import { PaginationDirective } from './pagination.directive';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { CommonModule } from '@angular/common';
 import { Component, Input, ViewChild } from '@angular/core';
@@ -73,7 +74,7 @@ describe('pagination component', () => {
       host.itemsForPage = (page, forceReload) =>
         page === 0 ? Observable.of([1, 2, 3, 4]) : Observable.of([1]);
       const loadNext = new Subject<void>();
-      host.loadNext = loadNext;
+      host.loadNext = loadNext.asObservable();
       hostFixture.detectChanges();
       loadNext.next(void 0);
       hostFixture.whenStable().then(() => {
