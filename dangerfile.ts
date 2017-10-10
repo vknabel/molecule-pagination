@@ -1,5 +1,5 @@
 import { danger, warn, TextDiff, results, schedule } from 'danger';
-import path from 'path';
+import * as path from 'path';
 import tslint from 'danger-plugin-tslint';
 
 schedule(async () => {
