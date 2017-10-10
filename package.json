@@ -59,6 +59,7 @@
     "codelyzer": "~2.0.0",
     "core-js": "^2.4.1",
     "danger": "^0.18.0",
+    "danger-plugin-tslint": "^2.0.0",
     "in-publish": "^2.0.0",
     "jasmine-core": "~2.5.2",
     "jasmine-marbles": "^0.1.0",

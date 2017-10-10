@@ -2,7 +2,7 @@ import { Observable } from 'rxjs/Observable';
 import { PageSource } from './page-source.class';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/finally';
-import 'rxjs/add/operator/do';
+import "rxjs/add/operator/do";
 
 describe('page source', () => {
   let spy: jasmine.Spy;
@@ -16,14 +16,18 @@ describe('page source', () => {
   ) {
     it(expectation, done => {
       sut
-      .itemsForPage(forPageIndex, forceReload)
-      .do(assertion, error => fail(error))
-      .finally(() => done())
-      .subscribe();
+        .itemsForPage(forPageIndex, forceReload)
+        .do(assertion, error => fail(error))
+        .finally(() => done())
+        .subscribe();
     });
   }
 
-  function describeForPageSource(description: string, setup: () => void, assert: string[][]) {
+  function describeForPageSource(
+    description: string,
+    setup: () => void,
+    assert: string[][]
+  ) {
     describe(description, () => {
       beforeEach(setup);
 
@@ -103,111 +107,123 @@ describe('page source', () => {
     });
   }
 
-  describeForPageSource('when created from another source', () => {
-    spy = jasmine
-      .createSpy('page loader', (index, wasForced) => {
-        if (index === 0) {
-          return ['Hello', 'world', '!'];
-        } else if (index === 1) {
-          return ['How', 'are', 'you', '?'];
-        } else {
-          return [];
-        }
-      })
-      .and.callThrough();
-    sut = PageSource.from(new PageSource<string>(spy));
-  }, [
-      ['Hello', 'world', '!'],
-      ['How', 'are', 'you', '?']
-  ]);
+  describeForPageSource(
+    'when created from another source',
+    () => {
+      spy = jasmine
+        .createSpy('page loader', (index, wasForced) => {
+          if (index === 0) {
+            return ['Hello', 'world', '!'];
+          } else if (index === 1) {
+            return ['How', 'are', 'you', '?'];
+          } else {
+            return [];
+          }
+        })
+        .and.callThrough();
+      sut = PageSource.from(new PageSource<string>(spy));
+    },
+    [['Hello', 'world', '!'], ['How', 'are', 'you', '?']]
+  );
 
-  describeForPageSource('when created from loader', () => {
-    spy = jasmine
-      .createSpy('page loader', (index, wasForced) => {
-        if (index === 0) {
-          return ['Hello', 'world', '!'];
-        } else if (index === 1) {
-          return ['How', 'are', 'you', '?'];
-        } else {
-          return [];
-        }
-      })
-      .and.callThrough();
-    sut = PageSource.from<string>(spy);
-  }, [
-    ['Hello', 'world', '!'],
-    ['How', 'are', 'you', '?']
-]);
+  describeForPageSource(
+    'when created from loader',
+    () => {
+      spy = jasmine
+        .createSpy('page loader', (index, wasForced) => {
+          if (index === 0) {
+            return ['Hello', 'world', '!'];
+          } else if (index === 1) {
+            return ['How', 'are', 'you', '?'];
+          } else {
+            return [];
+          }
+        })
+        .and.callThrough();
+      sut = PageSource.from<string>(spy);
+    },
+    [['Hello', 'world', '!'], ['How', 'are', 'you', '?']]
+  );
 
-  describeForPageSource('when created unsing a loader', () => {
-    spy = jasmine
-      .createSpy('page loader', (index, wasForced) => {
-        if (index === 0) {
-          return ['Hello', 'world', '!'];
-        } else if (index === 1) {
-          return ['How', 'are', 'you', '?'];
-        } else {
-          return [];
-        }
-      })
-      .and.callThrough();
-    sut = new PageSource<string>(spy);
-  }, [
-    ['Hello', 'world', '!'],
-    ['How', 'are', 'you', '?']
-]);
+  describeForPageSource(
+    'when created unsing a loader',
+    () => {
+      spy = jasmine
+        .createSpy('page loader', (index, wasForced) => {
+          if (index === 0) {
+            return ['Hello', 'world', '!'];
+          } else if (index === 1) {
+            return ['How', 'are', 'you', '?'];
+          } else {
+            return [];
+          }
+        })
+        .and.callThrough();
+      sut = new PageSource<string>(spy);
+    },
+    [['Hello', 'world', '!'], ['How', 'are', 'you', '?']]
+  );
 
-  describeForPageSource('when mapping a loader', () => {
-    spy = jasmine
-      .createSpy('page loader', (index, wasForced) => {
-        if (index === 0) {
-          return ['Hello', 'world', '!'];
-        } else if (index === 1) {
-          return ['How', 'are', 'you', '?'];
-        } else {
-          return [];
-        }
-      })
-      .and.callThrough();
-    sut = new PageSource<string>(spy).map(contents => contents.map(content => content.toUpperCase()));
-  }, [
-    ['HELLO', 'WORLD', '!'],
-    ['HOW', 'ARE', 'YOU', '?']
-  ]);
+  describeForPageSource(
+    'when mapping a loader',
+    () => {
+      spy = jasmine
+        .createSpy('page loader', (index, wasForced) => {
+          if (index === 0) {
+            return ['Hello', 'world', '!'];
+          } else if (index === 1) {
+            return ['How', 'are', 'you', '?'];
+          } else {
+            return [];
+          }
+        })
+        .and.callThrough();
+      sut = new PageSource<string>(spy).map(contents =>
+        contents.map(content => content.toUpperCase())
+      );
+    },
+    [['HELLO', 'WORLD', '!'], ['HOW', 'ARE', 'YOU', '?']]
+  );
 
-  describeForPageSource('when flat mapping a loader', () => {
-    spy = jasmine
-      .createSpy('page loader', (index, wasForced) => {
-        if (index === 0) {
-          return ['Hello', 'world', '!'];
-        } else if (index === 1) {
-          return ['How', 'are', 'you', '?'];
-        } else {
-          return [];
-        }
-      })
-      .and.callThrough();
-    sut = new PageSource<string>(spy).flatMap(contents => Observable.of(contents.map(content => content.toLowerCase())));
-  }, [
-    ['hello', 'world', '!'],
-    ['how', 'are', 'you', '?']
-  ]);
+  describeForPageSource(
+    'when flat mapping a loader',
+    () => {
+      spy = jasmine
+        .createSpy('page loader', (index, wasForced) => {
+          if (index === 0) {
+            return ['Hello', 'world', '!'];
+          } else if (index === 1) {
+            return ['How', 'are', 'you', '?'];
+          } else {
+            return [];
+          }
+        })
+        .and.callThrough();
+      sut = new PageSource<string>(spy).flatMap(contents =>
+        Observable.of(contents.map(content => content.toLowerCase()))
+      );
+    },
+    [['hello', 'world', '!'], ['how', 'are', 'you', '?']]
+  );
 
-  describeForPageSource('when merge mapping a loader', () => {
-    spy = jasmine
-      .createSpy('page loader', (index, wasForced) => {
-        if (index === 0) {
-          return ['Hello', 'world', '!'];
-        } else if (index === 1) {
-          return ['How', 'are', 'you', '?'];
-        } else {
-          return [];
-        }
-      })
-      .and.callThrough();
-    sut = new PageSource<string>(spy).mergeMap(contents => Observable.of(contents.map(content => content.toLowerCase())));
-  }, [
-    ['hello', 'world', '!'],
-    ['how', 'are', 'you', '?']
-  ]);
+  describeForPageSource(
+    'when merge mapping a loader',
+    () => {
+      spy = jasmine
+        .createSpy('page loader', (index, wasForced) => {
+          if (index === 0) {
+            return ['Hello', 'world', '!'];
+          } else if (index === 1) {
+            return ['How', 'are', 'you', '?'];
+          } else {
+            return [];
+          }
+        })
+        .and.callThrough();
+      sut = new PageSource<string>(spy).mergeMap(contents =>
+        Observable.of(contents.map(content => content.toLowerCase()))
+      );
+    },
+    [['hello', 'world', '!'], ['how', 'are', 'you', '?']]
+  );
 });
