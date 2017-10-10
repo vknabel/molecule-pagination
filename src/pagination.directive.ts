@@ -32,6 +32,27 @@ import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/mergeScan';
 import { PageLoader, PageSource } from './page-source.class';
 
+export class PaginationContext<T> {
+  private page$: BehaviorSubject<number>;
+  private items$: BehaviorSubject<T[] | null>;
+
+  constructor(
+    page$: BehaviorSubject<number>,
+    items$: BehaviorSubject<T[] | null>
+  ) {
+    this.page$ = page$;
+    this.items$ = items$;
+  }
+
+  public get $implicit(): T[] | null {
+    return this.items$.getValue();
+  }
+
+  public get index(): number {
+    return this.page$.getValue();
+  }
+}
+
 @Directive({
   selector: '[molPagination]'
 })
@@ -188,26 +209,5 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
   public ngOnDestroy() {
     this.ngOnDestroy$.next(void 0);
     this.ngOnDestroy$.complete();
-  }
-}
-
-export class PaginationContext<T> {
-  private page$: BehaviorSubject<number>;
-  private items$: BehaviorSubject<T[] | null>;
-
-  constructor(
-    page$: BehaviorSubject<number>,
-    items$: BehaviorSubject<T[] | null>
-  ) {
-    this.page$ = page$;
-    this.items$ = items$;
-  }
-
-  public get $implicit(): T[] | null {
-    return this.items$.getValue();
-  }
-
-  public get index(): number {
-    return this.page$.getValue();
   }
 }

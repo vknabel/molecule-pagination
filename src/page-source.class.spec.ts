@@ -2,7 +2,7 @@ import { Observable } from 'rxjs/Observable';
 import { PageSource } from './page-source.class';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/finally';
-import "rxjs/add/operator/do";
+import 'rxjs/add/operator/do';
 
 describe('page source', () => {
   let spy: jasmine.Spy;
