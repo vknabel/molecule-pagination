@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- Missing export for page sources
+
 ## 0.2.0
 
 - Introduced `PageSource` as a monad over `PageLoader` #1
