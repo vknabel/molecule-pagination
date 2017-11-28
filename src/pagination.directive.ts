@@ -15,6 +15,7 @@ import { ReplaySubject } from 'rxjs/ReplaySubject';
 import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
 import 'rxjs/add/observable/never';
+import 'rxjs/add/observable/empty';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/merge';
 import 'rxjs/add/operator/pluck';
@@ -92,9 +93,9 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
     const loadNext$ = this.ngOnChanges$
       .asObservable()
       .pluck('molPaginationLoadNext', 'currentValue')
-      .switchMap(
+      .mergeMap(
         (source: Observable<void>): Observable<void> =>
-          source || Observable.never<void>()
+          source || Observable.empty<void>()
       );
     const hardReload$ = this.ngOnChanges$
       .asObservable()

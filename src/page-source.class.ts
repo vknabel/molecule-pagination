@@ -26,6 +26,21 @@ export class PageSource<T> {
     return Array.isArray(items) ? Observable.of(items) : Observable.from(items);
   }
 
+  public do(
+    next?: (contents: T[], pageIndex: number, wasForced: boolean) => void,
+    error?: (error: {}, pageIndex: number, wasForced: boolean) => void,
+    complete?: (pageIndex: number, wasForced: boolean) => void
+  ): PageSource<T> {
+    return new PageSource((pageIndex, wasForced) =>
+      this.itemsForPage(pageIndex, wasForced)
+        .do(
+          value => next && next(value, pageIndex, wasForced),
+          cause => error && error(cause, pageIndex, wasForced),
+          () => complete && complete(pageIndex, wasForced)
+        )
+    );
+  }
+
   public map<R>(
     transform: (contents: T[], pageIndex: number, wasForced: boolean) => R[]
   ): PageSource<R> {
