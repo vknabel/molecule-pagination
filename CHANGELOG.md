@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+- Did unsubscribe load next while not intended
+
 ## 0.3.0
 
 - `do` for Page Sources
