@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0
+
+- Upgrade to Angular 7
+
 ## 0.3.1
 
 - Did unsubscribe load next while not intended

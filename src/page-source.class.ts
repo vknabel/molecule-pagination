@@ -1,5 +1,5 @@
-import { Observable, ObservableInput } from 'rxjs/Observable';
-import 'rxjs/add/observable/from';
+import { Observable, from, of, ObservableInput } from 'rxjs';
+import { tap, map, mergeMap } from 'rxjs/operators';
 
 export type PageLoader<T> = (
   page: number,
@@ -23,7 +23,7 @@ export class PageSource<T> {
 
   public itemsForPage(pageIndex: number, wasForced: boolean): Observable<T[]> {
     const items = this.loader(pageIndex, wasForced);
-    return Array.isArray(items) ? Observable.of(items) : Observable.from(items);
+    return Array.isArray(items) ? of(items) : from(items);
   }
 
   public do(
@@ -32,12 +32,13 @@ export class PageSource<T> {
     complete?: (pageIndex: number, wasForced: boolean) => void
   ): PageSource<T> {
     return new PageSource((pageIndex, wasForced) =>
-      this.itemsForPage(pageIndex, wasForced)
-        .do(
+      this.itemsForPage(pageIndex, wasForced).pipe(
+        tap(
           value => next && next(value, pageIndex, wasForced),
           cause => error && error(cause, pageIndex, wasForced),
           () => complete && complete(pageIndex, wasForced)
         )
+      )
     );
   }
 
@@ -45,9 +46,9 @@ export class PageSource<T> {
     transform: (contents: T[], pageIndex: number, wasForced: boolean) => R[]
   ): PageSource<R> {
     return new PageSource((pageIndex, wasForced) =>
-      this.itemsForPage(pageIndex, wasForced).map(contents =>
+      this.itemsForPage(pageIndex, wasForced).pipe(map(contents =>
         transform(contents, pageIndex, wasForced)
-      )
+      ))
     );
   }
 
@@ -59,8 +60,10 @@ export class PageSource<T> {
     ) => ObservableInput<R[]>
   ): PageSource<R> {
     return new PageSource((pageIndex, wasForced) =>
-      this.itemsForPage(pageIndex, wasForced).mergeMap(contents =>
-        transform(contents, pageIndex, wasForced)
+      this.itemsForPage(pageIndex, wasForced).pipe(
+        mergeMap(contents =>
+          transform(contents, pageIndex, wasForced)
+        )
       )
     );
   }

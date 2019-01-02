@@ -10,28 +10,30 @@ import {
   TemplateRef,
   ViewContainerRef
 } from '@angular/core';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
-import { ReplaySubject } from 'rxjs/ReplaySubject';
-import { Observable } from 'rxjs/Observable';
-import { Subject } from 'rxjs/Subject';
-import 'rxjs/add/observable/never';
-import 'rxjs/add/observable/empty';
-import 'rxjs/add/observable/of';
-import 'rxjs/add/observable/merge';
-import 'rxjs/add/operator/pluck';
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/switchMap';
-import 'rxjs/add/operator/mergeMap';
-import 'rxjs/add/operator/scan';
-import 'rxjs/add/operator/do';
-import 'rxjs/add/operator/takeUntil';
-import 'rxjs/add/operator/switch';
-import 'rxjs/add/operator/mapTo';
-import 'rxjs/add/operator/startWith';
-import 'rxjs/add/operator/defaultIfEmpty';
-import 'rxjs/add/operator/filter';
-import 'rxjs/add/operator/mergeScan';
 import { PageLoader, PageSource } from './page-source.class';
+import {
+  BehaviorSubject,
+  Observable,
+  Subject,
+  ReplaySubject,
+  empty,
+  never,
+  merge as mergeObservables
+} from 'rxjs';
+import {
+  pluck,
+  mergeMap,
+  filter,
+  startWith,
+  switchAll,
+  map,
+  mapTo,
+  switchMap,
+  mergeScan,
+  tap,
+  takeUntil,
+  defaultIfEmpty
+} from 'rxjs/operators';
 
 export class PaginationContext<T> {
   private page$: BehaviorSubject<number>;
@@ -90,116 +92,125 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
   }
 
   public ngOnInit(): void {
-    const loadNext$ = this.ngOnChanges$
-      .asObservable()
-      .pluck('molPaginationLoadNext', 'currentValue')
-      .mergeMap(
-        (source: Observable<void>): Observable<void> =>
-          source || Observable.empty<void>()
-      );
-    const hardReload$ = this.ngOnChanges$
-      .asObservable()
-      .pluck<SimpleChanges, Observable<void>>(
+    const loadNext$ = this.ngOnChanges$.pipe(
+      pluck('molPaginationLoadNext', 'currentValue'),
+      mergeMap(
+        (source: Observable<void>): Observable<void> => source || empty()
+      )
+    );
+    const hardReload$ = this.ngOnChanges$.pipe(
+      pluck<SimpleChanges, Observable<void>>(
         'molPaginationHardReload',
         'currentValue'
-      )
-      .filter((v: Observable<void>) => v != null)
-      .startWith<Observable<void>>(Observable.never<void>())
-      .switch();
-    const latestRequest$ = this.ngOnChanges$
-      .asObservable()
-      .pluck('molPagination', 'currentValue')
-      .map((loader: PageLoader<T>) => PageSource.from(loader));
+      ),
+      filter((v: Observable<void>) => v != null),
+      startWith<Observable<void>>(never()),
+      switchAll()
+    );
+    const latestRequest$ = this.ngOnChanges$.pipe(
+      pluck('molPagination', 'currentValue'),
+      map((loader: PageLoader<T>) => PageSource.from(loader))
+    );
 
-    const shouldLoadNext$ = Observable.merge(
-      hardReload$.mapTo(false),
-      loadNext$.mapTo(true)
+    const shouldLoadNext$ = mergeObservables(
+      hardReload$.pipe(mapTo(false)),
+      loadNext$.pipe(mapTo(true))
     );
 
     latestRequest$
-      .switchMap((pageSource: PageSource<T>) =>
-        shouldLoadNext$
-          .startWith(false)
-          .mergeScan(
-            (state, shouldLoadNext) => {
-              if (shouldLoadNext) {
-                const nextPage = state.currentPage + 1;
-                return pageSource
-                  .itemsForPage(nextPage, false)
-                  .defaultIfEmpty([])
-                  .map((newItems: T[]) => {
-                    const copy = state.book.slice(0);
-                    copy[nextPage] = newItems;
-                    return {
-                      currentPage:
-                        newItems.length === 0 ? state.currentPage : nextPage,
-                      book: copy
-                    };
-                  });
-              } else {
-                return pageSource
-                  .itemsForPage(0, true)
-                  .defaultIfEmpty([])
-                  .map((initialItems: T[]) => {
-                    return { currentPage: 0, book: [initialItems] };
-                  });
-              }
-            },
-            { currentPage: 0, book: [] as T[][] },
-            1
+      .pipe(
+        switchMap((pageSource: PageSource<T>) =>
+          shouldLoadNext$.pipe(
+            startWith(false),
+            mergeScan(
+              (state, shouldLoadNext) => {
+                if (shouldLoadNext) {
+                  const nextPage = state.currentPage + 1;
+                  return pageSource
+                    .itemsForPage(nextPage, false).pipe(
+                      defaultIfEmpty([])
+                      , map((newItems: T[]) => {
+                        const copy = state.book.slice(0);
+                        copy[nextPage] = newItems;
+                        return {
+                          currentPage:
+                            newItems.length === 0 ? state.currentPage : nextPage,
+                          book: copy
+                        };
+                      })
+                    )
+                    ;
+                } else {
+                  return pageSource
+                    .itemsForPage(0, true).pipe(
+                      defaultIfEmpty([])
+                      , map((initialItems: T[]) => {
+                        return { currentPage: 0, book: [initialItems] };
+                      })
+                    );
+                }
+              },
+              { currentPage: 0, book: [] as T[][] },
+              1
+            ),
+
+            startWith(null)
           )
-          .startWith(null)
+        ),
+        tap(record => record && this.page$.next(record.currentPage)),
+        map(record => record && record.book),
+        map(
+          book =>
+            book &&
+            book.reduce(
+              (flattened, pageItems) => flattened.concat(pageItems),
+              []
+            )
+        ),
+        tap(nextValue => this.items$.next(nextValue)),
+        tap(() => this.changeDetector.markForCheck()),
+        tap(items => {
+          if (items == null) {
+            if (!this.loadingViewRef) {
+              this.viewContainerRef.clear();
+              this.emptyViewRef = null;
+              this.fetchedViewRef = null;
+              if (this.molPaginationIfLoading) {
+                this.loadingViewRef = this.viewContainerRef.createEmbeddedView(
+                  this.molPaginationIfLoading,
+                  this.context
+                );
+              }
+            }
+          } else if (items.length === 0) {
+            if (!this.emptyViewRef) {
+              this.viewContainerRef.clear();
+              this.loadingViewRef = null;
+              this.fetchedViewRef = null;
+              if (this.molPaginationIfEmpty) {
+                this.emptyViewRef = this.viewContainerRef.createEmbeddedView(
+                  this.molPaginationIfEmpty,
+                  this.context
+                );
+              }
+            }
+          } else {
+            if (!this.fetchedViewRef) {
+              this.viewContainerRef.clear();
+              this.loadingViewRef = null;
+              this.emptyViewRef = null;
+              if (this.templateRef) {
+                this.fetchedViewRef = this.viewContainerRef.createEmbeddedView(
+                  this.templateRef,
+                  this.context
+                );
+              }
+            }
+          }
+        }),
+        tap(() => this.changeDetector.markForCheck()),
+        takeUntil(this.ngOnDestroy$.asObservable())
       )
-      .do(record => record && this.page$.next(record.currentPage))
-      .map(record => record && record.book)
-      .map(
-        book =>
-          book &&
-          book.reduce((flattened, pageItems) => flattened.concat(pageItems), [])
-      )
-      .do(nextValue => this.items$.next(nextValue))
-      .do(() => this.changeDetector.markForCheck())
-      .do(items => {
-        if (items == null) {
-          if (!this.loadingViewRef) {
-            this.viewContainerRef.clear();
-            this.emptyViewRef = null;
-            this.fetchedViewRef = null;
-            if (this.molPaginationIfLoading) {
-              this.loadingViewRef = this.viewContainerRef.createEmbeddedView(
-                this.molPaginationIfLoading,
-                this.context
-              );
-            }
-          }
-        } else if (items.length === 0) {
-          if (!this.emptyViewRef) {
-            this.viewContainerRef.clear();
-            this.loadingViewRef = null;
-            this.fetchedViewRef = null;
-            if (this.molPaginationIfEmpty) {
-              this.emptyViewRef = this.viewContainerRef.createEmbeddedView(
-                this.molPaginationIfEmpty,
-                this.context
-              );
-            }
-          }
-        } else {
-          if (!this.fetchedViewRef) {
-            this.viewContainerRef.clear();
-            this.loadingViewRef = null;
-            this.emptyViewRef = null;
-            if (this.templateRef) {
-              this.fetchedViewRef = this.viewContainerRef.createEmbeddedView(
-                this.templateRef,
-                this.context
-              );
-            }
-          }
-        }
-      })
-      .do(() => this.changeDetector.markForCheck())
-      .takeUntil(this.ngOnDestroy$.asObservable())
       .subscribe();
   }
 

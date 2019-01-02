@@ -3,12 +3,8 @@ import { PaginationDirective } from './pagination.directive';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
 import { CommonModule } from '@angular/common';
 import { Component, Input, ViewChild } from '@angular/core';
-import { Observable } from 'rxjs/Observable';
 import { By } from '@angular/platform-browser';
-import 'rxjs/add/observable/of';
-import 'rxjs/add/observable/empty';
-import 'rxjs/add/observable/from';
-import { Subject } from 'rxjs/Subject';
+import { Observable, Subject, of, never, empty } from 'rxjs';
 
 @Component({
   template: `
@@ -45,7 +41,7 @@ describe('pagination component', () => {
   );
 
   beforeEach(() => {
-    hostFixture = TestBed.createComponent(PaginationHostComponent);
+    hostFixture = TestBed.createComponent<PaginationHostComponent<number>>(PaginationHostComponent);
     host = hostFixture.componentInstance;
     sut = host.paginationDirective;
   });
@@ -58,7 +54,7 @@ describe('pagination component', () => {
     'displays content when stable and having two pages',
     async(() => {
       host.itemsForPage = (page, forceReload) =>
-        page === 0 ? Observable.of([1, 2, 3, 4]) : Observable.of([1]);
+        page === 0 ? of([1, 2, 3, 4]) : of([1]);
       hostFixture.detectChanges();
       hostFixture.whenStable().then(() => {
         expect(
@@ -72,7 +68,7 @@ describe('pagination component', () => {
     'displays content when stable and having two pages',
     async(() => {
       host.itemsForPage = (page, forceReload) =>
-        page === 0 ? Observable.of([1, 2, 3, 4]) : Observable.of([1]);
+        page === 0 ? of([1, 2, 3, 4]) : of([1]);
       const loadNext = new Subject<void>();
       host.loadNext = loadNext.asObservable();
       hostFixture.detectChanges();
@@ -89,7 +85,7 @@ describe('pagination component', () => {
   it(
     'displays content when stable and having one page',
     async(() => {
-      host.itemsForPage = (page, forceReload) => Observable.of([1, 2, 3]);
+      host.itemsForPage = (page, forceReload) => of([1, 2, 3]);
       hostFixture.detectChanges();
       hostFixture.whenStable().then(() => {
         expect(
@@ -102,7 +98,7 @@ describe('pagination component', () => {
   it(
     'displays empty when stable and empty',
     async(() => {
-      host.itemsForPage = (page, forceReload) => Observable.of([]);
+      host.itemsForPage = (page, forceReload) => of([]);
       hostFixture.detectChanges();
       hostFixture.whenStable().then(() => {
         expect(
@@ -115,7 +111,7 @@ describe('pagination component', () => {
   it(
     'displays loading when never emitted',
     async(() => {
-      host.itemsForPage = (page, forceReload) => Observable.never();
+      host.itemsForPage = (page, forceReload) => never();
       hostFixture.detectChanges();
 
       hostFixture.whenStable().then(() => {
@@ -129,7 +125,7 @@ describe('pagination component', () => {
   it(
     'displays empty when only completing',
     async(() => {
-      host.itemsForPage = (page, forceReload) => Observable.empty();
+      host.itemsForPage = (page, forceReload) => empty();
       hostFixture.detectChanges();
       hostFixture.whenStable().then(() => {
         expect(
@@ -142,9 +138,9 @@ describe('pagination component', () => {
   it(
     'picks the latest page loader',
     async(() => {
-      host.itemsForPage = (page, forceReload) => Observable.of([1, 2, 3]);
+      host.itemsForPage = (page, forceReload) => of([1, 2, 3]);
       hostFixture.detectChanges();
-      host.itemsForPage = (page, forceReload) => Observable.of([3]);
+      host.itemsForPage = (page, forceReload) => of([3]);
       hostFixture.detectChanges();
       hostFixture.whenStable().then(() => {
         expect(
@@ -157,9 +153,9 @@ describe('pagination component', () => {
   it(
     'ignores previous page loader',
     async(() => {
-      host.itemsForPage = (page, forceReload) => Observable.of([1, 2, 3]);
+      host.itemsForPage = (page, forceReload) => of([1, 2, 3]);
       hostFixture.detectChanges();
-      host.itemsForPage = (page, forceReload) => Observable.never();
+      host.itemsForPage = (page, forceReload) => never();
       hostFixture.detectChanges();
       hostFixture.whenStable().then(() => {
         expect(
@@ -172,9 +168,9 @@ describe('pagination component', () => {
   it(
     'changing the page loader starts loading',
     async(() => {
-      host.itemsForPage = (page, forceReload) => Observable.of([1, 2, 3]);
+      host.itemsForPage = (page, forceReload) => of([1, 2, 3]);
       hostFixture.detectChanges();
-      host.itemsForPage = (page, forceReload) => Observable.never();
+      host.itemsForPage = (page, forceReload) => never();
       hostFixture.detectChanges();
       hostFixture.whenStable().then(() => {
         expect(

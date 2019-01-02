@@ -1,8 +1,6 @@
-import { Observable } from 'rxjs/Observable';
 import { PageSource } from './page-source.class';
-import 'rxjs/add/observable/of';
-import 'rxjs/add/operator/finally';
-import 'rxjs/add/operator/do';
+import { tap, finalize } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 describe('page source', () => {
   let spy: jasmine.Spy;
@@ -16,9 +14,10 @@ describe('page source', () => {
   ) {
     it(expectation, done => {
       sut
-        .itemsForPage(forPageIndex, forceReload)
-        .do(assertion, error => fail(error))
-        .finally(() => done())
+        .itemsForPage(forPageIndex, forceReload).pipe(
+          tap(assertion, error => fail(error)),
+          finalize(() => done())
+        )
         .subscribe();
     });
   }
@@ -200,7 +199,7 @@ describe('page source', () => {
         })
         .and.callThrough();
       sut = new PageSource<string>(spy).flatMap(contents =>
-        Observable.of(contents.map(content => content.toLowerCase()))
+        of(contents.map(content => content.toLowerCase()))
       );
     },
     [['hello', 'world', '!'], ['how', 'are', 'you', '?']]
@@ -221,7 +220,7 @@ describe('page source', () => {
         })
         .and.callThrough();
       sut = new PageSource<string>(spy).mergeMap(contents =>
-        Observable.of(contents.map(content => content.toLowerCase()))
+        of(contents.map(content => content.toLowerCase()))
       );
     },
     [['hello', 'world', '!'], ['how', 'are', 'you', '?']]
