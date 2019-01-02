@@ -55,7 +55,9 @@ async function checkIfAllTestsAreEnabled(): Promise<void> {
   const testDiffsWithName = await diffsForAllTests();
   testDiffsWithName.filter(isThisTestDisabled).forEach(namedDiff => {
     fail(
-      `The file \`${namedDiff.name}\` still contains disabled/focused tests (like \`xit\` or \`fdescribe\`).`
+      `The file \`${
+        namedDiff.name
+      }\` still contains disabled/focused tests (like \`xit\` or \`fdescribe\`).`
     );
   });
 }

@@ -46,9 +46,9 @@ export class PageSource<T> {
     transform: (contents: T[], pageIndex: number, wasForced: boolean) => R[]
   ): PageSource<R> {
     return new PageSource((pageIndex, wasForced) =>
-      this.itemsForPage(pageIndex, wasForced).pipe(map(contents =>
-        transform(contents, pageIndex, wasForced)
-      ))
+      this.itemsForPage(pageIndex, wasForced).pipe(
+        map(contents => transform(contents, pageIndex, wasForced))
+      )
     );
   }
 
@@ -61,9 +61,7 @@ export class PageSource<T> {
   ): PageSource<R> {
     return new PageSource((pageIndex, wasForced) =>
       this.itemsForPage(pageIndex, wasForced).pipe(
-        mergeMap(contents =>
-          transform(contents, pageIndex, wasForced)
-        )
+        mergeMap(contents => transform(contents, pageIndex, wasForced))
       )
     );
   }

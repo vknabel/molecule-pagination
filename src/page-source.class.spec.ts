@@ -14,7 +14,8 @@ describe('page source', () => {
   ) {
     it(expectation, done => {
       sut
-        .itemsForPage(forPageIndex, forceReload).pipe(
+        .itemsForPage(forPageIndex, forceReload)
+        .pipe(
           tap(assertion, error => fail(error)),
           finalize(() => done())
         )

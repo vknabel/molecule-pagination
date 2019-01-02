@@ -126,28 +126,25 @@ export class PaginationDirective<T> implements OnChanges, OnDestroy, OnInit {
               (state, shouldLoadNext) => {
                 if (shouldLoadNext) {
                   const nextPage = state.currentPage + 1;
-                  return pageSource
-                    .itemsForPage(nextPage, false).pipe(
-                      defaultIfEmpty([])
-                      , map((newItems: T[]) => {
-                        const copy = state.book.slice(0);
-                        copy[nextPage] = newItems;
-                        return {
-                          currentPage:
-                            newItems.length === 0 ? state.currentPage : nextPage,
-                          book: copy
-                        };
-                      })
-                    )
-                    ;
+                  return pageSource.itemsForPage(nextPage, false).pipe(
+                    defaultIfEmpty([]),
+                    map((newItems: T[]) => {
+                      const copy = state.book.slice(0);
+                      copy[nextPage] = newItems;
+                      return {
+                        currentPage:
+                          newItems.length === 0 ? state.currentPage : nextPage,
+                        book: copy
+                      };
+                    })
+                  );
                 } else {
-                  return pageSource
-                    .itemsForPage(0, true).pipe(
-                      defaultIfEmpty([])
-                      , map((initialItems: T[]) => {
-                        return { currentPage: 0, book: [initialItems] };
-                      })
-                    );
+                  return pageSource.itemsForPage(0, true).pipe(
+                    defaultIfEmpty([]),
+                    map((initialItems: T[]) => {
+                      return { currentPage: 0, book: [initialItems] };
+                    })
+                  );
                 }
               },
               { currentPage: 0, book: [] as T[][] },
